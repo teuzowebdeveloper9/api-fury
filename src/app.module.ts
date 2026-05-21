@@ -4,6 +4,7 @@ import { ConfigModule as NestConfigModule } from "@nestjs/config";
 
 import { AppConfigService } from "./config/app-config.service";
 import { EnvironmentModule } from "./config/environment.module";
+import { TakedownModule } from "./takedown/takedown.module";
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { EnvironmentModule } from "./config/environment.module";
       useFactory: (config: AppConfigService) => ({
         connection: config.redisConnection
       })
-    })
+    }),
+    TakedownModule
   ]
 })
 export class AppModule {}
