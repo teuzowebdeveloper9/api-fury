@@ -2,6 +2,72 @@
 
 Mini-API em Node.js + TypeScript para o desafio tecnico FURY. A API recebe um webhook de violacao de anuncio, valida o payload com Zod, enfileira um job de takedown com BullMQ/Redis e executa um worker que chama a API publica JSONPlaceholder como simulacao da Meta Ads API.
 
+## Deploy publicado
+
+A API esta publicada em:
+
+```text
+https://api-fury.onrender.com
+```
+
+Nao e necessario rodar o projeto localmente para validar o fluxo principal do desafio. O deploy usa:
+
+- Render Web Service para rodar a API NestJS e o worker BullMQ no mesmo processo.
+- Upstash Redis como Redis gerenciado para armazenar a fila e o estado dos jobs.
+- JSONPlaceholder como endpoint externo de simulacao da Meta API.
+
+### Como testar o deploy
+
+Crie um job:
+
+```bash
+curl -X POST https://api-fury.onrender.com/webhook/violation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "adId": "ad_render_001",
+    "tenantId": "tenant_render",
+    "violationType": "BRAND_VIOLATION",
+    "severity": "HIGH",
+    "detectedAt": "2026-05-21T14:00:00.000Z"
+  }'
+```
+
+Use o `jobId` retornado para consultar o status:
+
+```bash
+curl https://api-fury.onrender.com/jobs/<jobId>
+```
+
+Exemplo de retorno esperado apos o worker processar:
+
+```json
+{
+  "jobId": "takedown-...",
+  "status": "completed",
+  "attempts": 1,
+  "result": {
+    "ok": true,
+    "externalStatus": 200,
+    "processedAt": "2026-05-21T15:41:14.027Z"
+  },
+  "error": null
+}
+```
+
+Tambem e possivel testar validacao enviando um payload invalido. A API retorna `400` com os erros detalhados do Zod.
+
+### Decisao de deploy
+
+Foram consideradas algumas opcoes para deploy gratuito ou de baixo custo:
+
+- Oracle Cloud com VM e Docker Compose, mantendo Redis e API em containers separados na mesma maquina.
+- Google Cloud Compute Engine com VM, tambem usando Docker Compose com uma porta/container para a API e Redis isolado na rede Docker.
+- Render com Upstash Redis.
+
+Para este desafio tecnico, a escolha final foi Render + Upstash Redis. O motivo foi pragmatismo: como o objetivo e demonstrar a integracao com BullMQ, idempotencia, retry e processamento do worker, usar um Redis gerenciado e um Web Service simples evita complexidade operacional desnecessaria para uma entrega de teste. Uma VM com Docker funcionaria bem, mas adicionaria manutencao de servidor, firewall, atualizacoes do SO, rede e persistencia manual. Para este contexto, isso seria mais proximo de overengineering do que de valor para o desafio.
+
+Observacao: no plano gratuito do Render, o servico pode dormir apos periodo de inatividade. Os jobs continuam armazenados no Upstash Redis, mas o worker so processa enquanto o servico esta acordado. Para producao real, a recomendacao seria usar um plano sem sleep ou separar API e worker em servicos dedicados.
+
 ## Stack
 
 - Node.js 20+
@@ -69,72 +135,6 @@ Referencias oficiais consultadas:
 - Retry automatico com backoff exponencial, maximo de 3 tentativas por padrao.
 - Idempotencia por `adId + tenantId` usando `jobId` deterministico com SHA-256.
 - `GET /jobs/:id` retorna `{ jobId, status, attempts, result, error }`.
-
-## Deploy publicado
-
-A API esta publicada em:
-
-```text
-https://api-fury.onrender.com
-```
-
-Nao e necessario rodar o projeto localmente para validar o fluxo principal do desafio. O deploy usa:
-
-- Render Web Service para rodar a API NestJS e o worker BullMQ no mesmo processo.
-- Upstash Redis como Redis gerenciado para armazenar a fila e o estado dos jobs.
-- JSONPlaceholder como endpoint externo de simulacao da Meta API.
-
-### Como testar o deploy
-
-Crie um job:
-
-```bash
-curl -X POST https://api-fury.onrender.com/webhook/violation \
-  -H "Content-Type: application/json" \
-  -d '{
-    "adId": "ad_render_001",
-    "tenantId": "tenant_render",
-    "violationType": "BRAND_VIOLATION",
-    "severity": "HIGH",
-    "detectedAt": "2026-05-21T14:00:00.000Z"
-  }'
-```
-
-Use o `jobId` retornado para consultar o status:
-
-```bash
-curl https://api-fury.onrender.com/jobs/<jobId>
-```
-
-Exemplo de retorno esperado apos o worker processar:
-
-```json
-{
-  "jobId": "takedown-...",
-  "status": "completed",
-  "attempts": 1,
-  "result": {
-    "ok": true,
-    "externalStatus": 200,
-    "processedAt": "2026-05-21T15:41:14.027Z"
-  },
-  "error": null
-}
-```
-
-Tambem e possivel testar validacao enviando um payload invalido. A API retorna `400` com os erros detalhados do Zod.
-
-### Decisao de deploy
-
-Foram consideradas algumas opcoes para deploy gratuito ou de baixo custo:
-
-- Oracle Cloud com VM e Docker Compose, mantendo Redis e API em containers separados na mesma maquina.
-- Google Cloud Compute Engine com VM, tambem usando Docker Compose com uma porta/container para a API e Redis isolado na rede Docker.
-- Render com Upstash Redis.
-
-Para este desafio tecnico, a escolha final foi Render + Upstash Redis. O motivo foi pragmatismo: como o objetivo e demonstrar a integracao com BullMQ, idempotencia, retry e processamento do worker, usar um Redis gerenciado e um Web Service simples evita complexidade operacional desnecessaria para uma entrega de teste. Uma VM com Docker funcionaria bem, mas adicionaria manutencao de servidor, firewall, atualizacoes do SO, rede e persistencia manual. Para este contexto, isso seria mais proximo de overengineering do que de valor para o desafio.
-
-Observacao: no plano gratuito do Render, o servico pode dormir apos periodo de inatividade. Os jobs continuam armazenados no Upstash Redis, mas o worker so processa enquanto o servico esta acordado. Para producao real, a recomendacao seria usar um plano sem sleep ou separar API e worker em servicos dedicados.
 
 ## Como rodar localmente
 
