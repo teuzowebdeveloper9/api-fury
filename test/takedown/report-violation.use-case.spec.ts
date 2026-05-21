@@ -42,4 +42,44 @@ describe("ReportViolationUseCase", () => {
       jobId: firstResult.jobId
     });
   });
+
+  it("does not deduplicate different tenant or ad combinations", async () => {
+    const enqueueTakedownJob = jest.fn(
+      (
+        job: Parameters<TakedownQueuePort["enqueueTakedownJob"]>[0]
+      ): ReturnType<TakedownQueuePort["enqueueTakedownJob"]> =>
+        Promise.resolve({
+          jobId: job.jobId,
+          status: "waiting" as const,
+          deduplicated: false
+        })
+    );
+
+    const queue: TakedownQueuePort = {
+      enqueueTakedownJob,
+      getJobStatus: jest.fn(() => Promise.resolve(null))
+    };
+
+    const useCase = new ReportViolationUseCase(queue);
+
+    const baseResult = await useCase.execute(violation);
+    const differentTenantResult = await useCase.execute({
+      ...violation,
+      tenantId: "tenant_789"
+    });
+    const differentAdResult = await useCase.execute({
+      ...violation,
+      adId: "ad_789"
+    });
+
+    expect(differentTenantResult.jobId).not.toBe(baseResult.jobId);
+    expect(differentAdResult.jobId).not.toBe(baseResult.jobId);
+    expect(
+      new Set([
+        baseResult.jobId,
+        differentTenantResult.jobId,
+        differentAdResult.jobId
+      ]).size
+    ).toBe(3);
+  });
 });

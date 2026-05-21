@@ -72,7 +72,7 @@ export class JobStatusResponseDoc {
   @ApiProperty({ nullable: true, type: TakedownJobResultDoc })
   result!: TakedownJobResultDoc | null;
 
-  @ApiProperty({ example: null, nullable: true })
+  @ApiProperty({ example: null, nullable: true, type: String })
   error!: string | null;
 }
 

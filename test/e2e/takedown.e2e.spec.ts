@@ -37,6 +37,10 @@ const jobStatusResponseSchema = z.object({
   error: z.string().nullable()
 });
 
+const notFoundResponseSchema = z.object({
+  message: z.string()
+});
+
 class InMemoryTakedownQueue implements TakedownQueuePort {
   private readonly jobs = new Map<string, JobStatusView>();
 
@@ -201,6 +205,35 @@ describe("Takedown HTTP API (e2e)", () => {
       attempts: 0,
       result: null,
       error: null
+    });
+  });
+
+  it("rejects malformed job ids before querying the queue", async () => {
+    const response = await request(baseUrl)
+      .get("/jobs/not-a-job-id")
+      .expect(400);
+
+    const body = validationErrorResponseSchema.parse(response.body as unknown);
+
+    expect(body).toMatchObject({
+      message: "Validation failed"
+    });
+    expect(body.errors.map((error) => error.path)).toEqual(
+      expect.arrayContaining(["id"])
+    );
+  });
+
+  it("returns 404 for a well-formed unknown job id", async () => {
+    const unknownJobId = `takedown-${"0".repeat(64)}`;
+
+    const response = await request(baseUrl)
+      .get(`/jobs/${unknownJobId}`)
+      .expect(404);
+
+    const body = notFoundResponseSchema.parse(response.body as unknown);
+
+    expect(body).toEqual({
+      message: "Job not found"
     });
   });
 });
