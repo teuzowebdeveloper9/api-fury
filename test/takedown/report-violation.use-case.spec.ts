@@ -12,13 +12,20 @@ describe("ReportViolationUseCase", () => {
   };
 
   it("enqueues a takedown job using a deterministic idempotency job id", async () => {
+    const enqueueTakedownJob = jest.fn(
+      (
+        job: Parameters<TakedownQueuePort["enqueueTakedownJob"]>[0]
+      ): ReturnType<TakedownQueuePort["enqueueTakedownJob"]> =>
+        Promise.resolve({
+          jobId: job.jobId,
+          status: "waiting" as const,
+          deduplicated: false
+        })
+    );
+
     const queue: TakedownQueuePort = {
-      enqueueTakedownJob: jest.fn(async (job) => ({
-        jobId: job.jobId,
-        status: "waiting" as const,
-        deduplicated: false
-      })),
-      getJobStatus: jest.fn(async () => null)
+      enqueueTakedownJob,
+      getJobStatus: jest.fn(() => Promise.resolve(null))
     };
 
     const useCase = new ReportViolationUseCase(queue);
@@ -30,7 +37,7 @@ describe("ReportViolationUseCase", () => {
     expect(firstResult.jobId).toMatch(/^takedown-[a-f0-9]{64}$/);
     expect(firstResult.jobId).not.toContain(violation.adId);
     expect(firstResult.jobId).not.toContain(violation.tenantId);
-    expect(queue.enqueueTakedownJob).toHaveBeenCalledWith({
+    expect(enqueueTakedownJob).toHaveBeenCalledWith({
       ...violation,
       jobId: firstResult.jobId
     });

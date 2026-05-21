@@ -31,7 +31,9 @@ class MetaApiNetworkError extends MetaApiSimulationError {
 export class JsonPlaceholderMetaAdsGateway implements MetaAdsGateway {
   constructor(private readonly config: AppConfigService) {}
 
-  async requestTakedown(_job: TakedownJobData): Promise<TakedownJobResult> {
+  async requestTakedown(job: TakedownJobData): Promise<TakedownJobResult> {
+    void job;
+
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),
