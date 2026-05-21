@@ -1,0 +1,281 @@
+{
+  "info": {
+    "_postman_id": "9f0b6a2f-72c2-4c1a-b5c8-2d5f3f6c84f1",
+    "name": "FURY Click Hero API",
+    "description": "Collection para validar o fluxo do desafio FURY: webhook de violacao, validacao Zod, idempotencia, consulta de job e health check.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Root",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('returns 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('reports API and Redis status', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.be.oneOf(['ok', 'degraded']);",
+              "  pm.expect(body.services.api).to.eql('ok');",
+              "  pm.expect(body.services.redis.status).to.be.oneOf(['ok', 'error']);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Takedown Job",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('adId', `ad_postman_${Date.now()}`);",
+              "pm.collectionVariables.set('tenantId', 'tenant_postman');"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('accepts webhook', function () {",
+              "  pm.response.to.have.status(202);",
+              "});",
+              "",
+              "pm.test('returns queue job id', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.jobId).to.match(/^takedown-[a-f0-9]{64}$/);",
+              "  pm.expect(body.status).to.be.a('string');",
+              "  pm.expect(body.deduplicated).to.be.a('boolean');",
+              "  pm.collectionVariables.set('jobId', body.jobId);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"adId\": \"{{adId}}\",\n  \"tenantId\": \"{{tenantId}}\",\n  \"violationType\": \"BRAND_VIOLATION\",\n  \"severity\": \"HIGH\",\n  \"detectedAt\": \"2026-05-21T14:00:00.000Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/webhook/violation",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "webhook",
+            "violation"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Duplicate Takedown Job",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('keeps adId + tenantId idempotent', function () {",
+              "  pm.response.to.have.status(202);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.deduplicated).to.eql(true);",
+              "  pm.expect(body.jobId).to.eql(pm.collectionVariables.get('jobId'));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"adId\": \"{{adId}}\",\n  \"tenantId\": \"{{tenantId}}\",\n  \"violationType\": \"BRAND_VIOLATION\",\n  \"severity\": \"HIGH\",\n  \"detectedAt\": \"2026-05-21T14:00:00.000Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/webhook/violation",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "webhook",
+            "violation"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Job Status",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('returns job status', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.jobId).to.eql(pm.collectionVariables.get('jobId'));",
+              "  pm.expect(body).to.have.keys(['jobId', 'status', 'attempts', 'result', 'error']);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/jobs/{{jobId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "jobs",
+            "{{jobId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Webhook Payload",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('rejects invalid payload with detailed errors', function () {",
+              "  pm.response.to.have.status(400);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.eql('Validation failed');",
+              "  pm.expect(body.errors).to.be.an('array').that.is.not.empty;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"adId\": \"\",\n  \"tenantId\": \"tenant_postman\",\n  \"violationType\": \"INVALID\",\n  \"severity\": \"HIGH\",\n  \"detectedAt\": \"not-a-date\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/webhook/violation",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "webhook",
+            "violation"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "OpenAPI JSON",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/openapi.json",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "openapi.json"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api-fury.onrender.com",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "takedown-replace-after-create",
+      "type": "string"
+    },
+    {
+      "key": "adId",
+      "value": "ad_postman_manual",
+      "type": "string"
+    },
+    {
+      "key": "tenantId",
+      "value": "tenant_postman",
+      "type": "string"
+    }
+  ]
+}

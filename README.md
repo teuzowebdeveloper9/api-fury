@@ -41,6 +41,7 @@ Documentos auxiliares para revisao:
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [Trade-offs de deploy e producao](docs/TRADEOFFS.md)
 - [Requests HTTP para teste rapido](docs/requests.http)
+- [Collection Postman](docs/fury-api.postman_collection.json)
 
 ### Como testar o deploy
 
