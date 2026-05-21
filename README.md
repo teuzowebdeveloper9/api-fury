@@ -109,7 +109,7 @@ Observacao: no plano gratuito do Render, o servico pode dormir apos periodo de i
 
 ## Ferramentas de desenvolvimento
 
-O projeto foi desenvolvido com auxilio de Claude Code no fluxo de implementacao, revisao e validacao, conforme permitido no enunciado do desafio. Tambem foi usado o skill `inicie-um-projeto` para iniciar o projeto com uma base consistente de arquitetura limpa, documentacao para agentes (`AGENTS.md` e `CLAUDE.md`), Jest desde o primeiro ciclo e regras explicitas de qualidade.
+O projeto foi desenvolvido com apoio de Claude Code para acelerar ciclos de implementacao e revisao, mantendo as decisoes tecnicas, arquitetura e validacoes sob responsabilidade do autor. Tambem utilizei uma skill de iniciacao de projeto para estruturar uma base consistente de arquitetura limpa, documentacao para agentes (`AGENTS.md` e `CLAUDE.md`), Jest desde o primeiro ciclo e regras explicitas de qualidade.
 
 O uso dessas ferramentas nao substituiu as decisoes tecnicas: a arquitetura, as fronteiras de dependencia, os testes, o deploy e os trade-offs de infraestrutura foram documentados no README para facilitar avaliacao e manutencao.
 
@@ -337,7 +337,7 @@ Infraestrutura externa e mockada por portas quando necessario. Testes unitarios 
 
 ## Bootstrap gerado por `inicie-um-projeto`
 
-Este projeto foi iniciado com o skill `inicie-um-projeto`.
+Este projeto foi iniciado com uma skill de iniciacao de projeto.
 
 O bootstrap:
 
