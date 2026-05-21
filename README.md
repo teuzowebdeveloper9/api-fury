@@ -86,6 +86,7 @@ O uso dessas ferramentas nao substituiu as decisoes tecnicas: a arquitetura, as 
 - Worker tratando sucesso `2xx`, falha HTTP `4xx/5xx` e timeout/erro de rede.
 - Redis local via Docker para desenvolvimento e Upstash Redis com TLS para deploy.
 - Testes unitarios cobrindo regra de idempotencia, validacao do webhook e cenarios de sucesso/falha/timeout da chamada externa.
+- CI no GitHub Actions rodando typecheck, lint, testes e build a cada push/PR na `main`.
 - Cuidados de seguranca: `.env` fora do Git, `.env.example` documentado, `helmet`, logs sem payload completo e sem chaves sensiveis versionadas.
 
 ## Stack
