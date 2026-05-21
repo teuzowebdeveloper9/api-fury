@@ -18,6 +18,18 @@ Nao e necessario rodar o projeto localmente para validar o fluxo principal do de
 - Upstash Redis como Redis gerenciado para armazenar a fila e o estado dos jobs.
 - JSONPlaceholder como endpoint externo de simulacao da Meta API.
 
+Documentacao interativa da API:
+
+```text
+https://api-fury.onrender.com/docs
+```
+
+OpenAPI JSON:
+
+```text
+https://api-fury.onrender.com/openapi.json
+```
+
 ### Como testar o deploy
 
 Crie um job:
@@ -58,6 +70,12 @@ Exemplo de retorno esperado apos o worker processar:
 
 Tambem e possivel testar validacao enviando um payload invalido. A API retorna `400` com os erros detalhados do Zod.
 
+### Documentacao com Scalar
+
+Foi adicionado Scalar para expor uma documentacao interativa baseada em OpenAPI. A especificacao e gerada pelo `@nestjs/swagger`, a partir dos controllers e dos DTOs de documentacao, e renderizada pelo `@scalar/nestjs-api-reference` em `/docs`.
+
+Essa decisao deixa a avaliacao mais direta: quem revisar o projeto consegue ver os endpoints, payloads, enums, respostas esperadas e erros sem precisar ler todo o codigo primeiro. Como o desafio nao pede front-end, a documentacao interativa entrega uma experiencia de exploracao leve sem adicionar uma interface desnecessaria ao produto.
+
 ### Decisao de deploy
 
 Foram consideradas algumas opcoes para deploy gratuito ou de baixo custo:
@@ -87,6 +105,7 @@ O uso dessas ferramentas nao substituiu as decisoes tecnicas: a arquitetura, as 
 - Redis local via Docker para desenvolvimento e Upstash Redis com TLS para deploy.
 - Testes unitarios cobrindo regra de idempotencia, validacao do webhook e cenarios de sucesso/falha/timeout da chamada externa.
 - CI no GitHub Actions rodando typecheck, lint, testes e build a cada push/PR na `main`.
+- Documentacao Scalar com contrato OpenAPI para facilitar avaliacao, teste manual e entendimento dos payloads.
 - Cuidados de seguranca: `.env` fora do Git, `.env.example` documentado, `helmet`, logs sem payload completo e sem chaves sensiveis versionadas.
 
 ## Stack
@@ -96,6 +115,7 @@ O uso dessas ferramentas nao substituiu as decisoes tecnicas: a arquitetura, as 
 - NestJS
 - Zod
 - BullMQ
+- Scalar API Reference
 - Redis local via Docker Compose ou Upstash Redis no deploy
 - Jest
 - ESLint
@@ -150,6 +170,8 @@ Referencias oficiais consultadas:
 
 - `POST /webhook/violation` recebe o webhook.
 - `GET /` e `GET /health` retornam status operacional simples.
+- `GET /docs` exibe a documentacao interativa Scalar.
+- `GET /openapi.json` expoe a especificacao OpenAPI.
 - Payload validado com Zod e erro `400` detalhado em caso invalido.
 - BullMQ enfileira job `meta-ad-takedown`.
 - Redis roda localmente via Docker Compose.
