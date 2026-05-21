@@ -10,6 +10,8 @@ A API esta publicada em:
 https://api-fury.onrender.com
 ```
 
+Ao abrir a URL base no navegador, a API responde um JSON simples de status com os endpoints disponiveis.
+
 Nao e necessario rodar o projeto localmente para validar o fluxo principal do desafio. O deploy usa:
 
 - Render Web Service para rodar a API NestJS e o worker BullMQ no mesmo processo.
@@ -67,6 +69,24 @@ Foram consideradas algumas opcoes para deploy gratuito ou de baixo custo:
 Para este desafio tecnico, a escolha final foi Render + Upstash Redis. O motivo foi pragmatismo: como o objetivo e demonstrar a integracao com BullMQ, idempotencia, retry e processamento do worker, usar um Redis gerenciado e um Web Service simples evita complexidade operacional desnecessaria para uma entrega de teste. Uma VM com Docker funcionaria bem, mas adicionaria manutencao de servidor, firewall, atualizacoes do SO, rede e persistencia manual. Para este contexto, isso seria mais proximo de overengineering do que de valor para o desafio.
 
 Observacao: no plano gratuito do Render, o servico pode dormir apos periodo de inatividade. Os jobs continuam armazenados no Upstash Redis, mas o worker so processa enquanto o servico esta acordado. Para producao real, a recomendacao seria usar um plano sem sleep ou separar API e worker em servicos dedicados.
+
+## Ferramentas de desenvolvimento
+
+O projeto foi desenvolvido com auxilio de Claude Code no fluxo de implementacao, revisao e validacao, conforme permitido no enunciado do desafio. Tambem foi usado o skill `inicie-um-projeto` para iniciar o projeto com uma base consistente de arquitetura limpa, documentacao para agentes (`AGENTS.md` e `CLAUDE.md`), Jest desde o primeiro ciclo e regras explicitas de qualidade.
+
+O uso dessas ferramentas nao substituiu as decisoes tecnicas: a arquitetura, as fronteiras de dependencia, os testes, o deploy e os trade-offs de infraestrutura foram documentados no README para facilitar avaliacao e manutencao.
+
+## Diferenciais tecnicos
+
+- API publica ja deployada e testada, sem exigir setup local para uma primeira avaliacao.
+- Arquitetura em camadas dentro do modulo NestJS, separando dominio, aplicacao, infraestrutura e interfaces.
+- Validacao de payload com Zod em pipe proprio, retornando `400` com erros por campo.
+- Idempotencia com `jobId` deterministico baseado em SHA-256 de `tenantId + adId`, evitando expor esses valores diretamente.
+- BullMQ configurado com retry automatico e backoff exponencial.
+- Worker tratando sucesso `2xx`, falha HTTP `4xx/5xx` e timeout/erro de rede.
+- Redis local via Docker para desenvolvimento e Upstash Redis com TLS para deploy.
+- Testes unitarios cobrindo regra de idempotencia, validacao do webhook e cenarios de sucesso/falha/timeout da chamada externa.
+- Cuidados de seguranca: `.env` fora do Git, `.env.example` documentado, `helmet`, logs sem payload completo e sem chaves sensiveis versionadas.
 
 ## Stack
 
@@ -128,6 +148,7 @@ Referencias oficiais consultadas:
 ## Requisitos atendidos
 
 - `POST /webhook/violation` recebe o webhook.
+- `GET /` e `GET /health` retornam status operacional simples.
 - Payload validado com Zod e erro `400` detalhado em caso invalido.
 - BullMQ enfileira job `meta-ad-takedown`.
 - Redis roda localmente via Docker Compose.
