@@ -24,6 +24,10 @@ export class TakedownProcessor extends WorkerHost {
       throw new Error(`Unsupported job name: ${job.name}`);
     }
 
+    this.logger.log(
+      `Processing takedown job ${job.id ?? job.data.jobId} attempt=${job.attemptsMade + 1}`
+    );
+
     try {
       const result = await this.processTakedownUseCase.execute(job.data);
       this.logger.log(

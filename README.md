@@ -127,7 +127,7 @@ O uso dessas ferramentas nao substituiu as decisoes tecnicas: a arquitetura, as 
 - CI no GitHub Actions rodando typecheck, lint, testes e build a cada push/PR na `main`.
 - Documentacao Scalar com contrato OpenAPI para facilitar avaliacao, teste manual e entendimento dos payloads.
 - `docs/ARCHITECTURE.md`, `docs/TRADEOFFS.md` e `docs/requests.http` para deixar claro o raciocinio tecnico e acelerar a validacao.
-- Cuidados de seguranca: `.env` fora do Git, `.env.example` documentado, `helmet`, logs sem payload completo e sem chaves sensiveis versionadas.
+- Cuidados de seguranca: `.env` fora do Git, `.env.example` documentado, `helmet`, logs operacionais sem payload completo e sem chaves sensiveis versionadas.
 
 ## Stack
 
@@ -331,7 +331,7 @@ Infraestrutura externa e mockada por portas quando necessario. Testes unitarios 
 - `.env` e ignorado pelo Git.
 - Apenas `.env.example` e versionado.
 - O `jobId` usa SHA-256 de `tenantId + adId`, evitando expor esses valores em URLs.
-- O worker nao loga payload completo.
+- Os logs cobrem entrada do webhook, validacao invalida, aceite/deduplicacao de job, consulta de status e processamento do worker sem imprimir payload completo.
 - Erros da chamada externa sao normalizados sem incluir corpo da resposta.
 - `helmet` e habilitado na inicializacao do Nest.
 

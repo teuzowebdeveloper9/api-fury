@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   NotFoundException,
   Param,
   Post
@@ -43,6 +44,8 @@ import { ZodValidationPipe } from "./zod-validation.pipe";
 @ApiTags("Takedown jobs")
 @Controller()
 export class TakedownController {
+  private readonly logger = new Logger(TakedownController.name);
+
   constructor(
     private readonly reportViolationUseCase: ReportViolationUseCase,
     private readonly getJobStatusUseCase: GetJobStatusUseCase
@@ -66,7 +69,17 @@ export class TakedownController {
     @Body(new ZodValidationPipe(violationWebhookSchema))
     payload: ViolationWebhookPayload
   ): Promise<EnqueueTakedownJobResult> {
-    return this.reportViolationUseCase.execute(payload);
+    this.logger.log(
+      `Violation webhook received with type=${payload.violationType} severity=${payload.severity}`
+    );
+
+    const result = await this.reportViolationUseCase.execute(payload);
+
+    this.logger.log(
+      `Takedown job ${result.jobId} accepted with status=${result.status} deduplicated=${result.deduplicated}`
+    );
+
+    return result;
   }
 
   @Get("jobs/:id")
@@ -91,13 +104,21 @@ export class TakedownController {
   async getJobStatus(
     @Param(new ZodValidationPipe(jobIdParamSchema)) params: JobIdParam
   ): Promise<JobStatusView> {
+    this.logger.log(`Job status requested for jobId=${params.id}`);
+
     const job = await this.getJobStatusUseCase.execute(params.id);
 
     if (!job) {
+      this.logger.warn(`Job status not found for jobId=${params.id}`);
+
       throw new NotFoundException({
         message: "Job not found"
       });
     }
+
+    this.logger.log(
+      `Job status returned for jobId=${job.jobId} status=${job.status} attempts=${job.attempts}`
+    );
 
     return job;
   }
