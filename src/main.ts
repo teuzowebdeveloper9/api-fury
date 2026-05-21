@@ -14,8 +14,8 @@ async function bootstrap(): Promise<void> {
   app.use(helmet());
   app.enableShutdownHooks();
 
-  await app.listen(config.port);
-  Logger.log(`API listening on port ${config.port}`, "Bootstrap");
+  await app.listen(config.port, config.host);
+  Logger.log(`API listening on ${config.host}:${config.port}`, "Bootstrap");
 }
 
 void bootstrap();

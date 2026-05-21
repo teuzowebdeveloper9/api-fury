@@ -163,9 +163,11 @@ Resposta:
 | Nome | Default | Uso |
 | --- | --- | --- |
 | `PORT` | `3000` | Porta HTTP da API |
+| `HOST` | `0.0.0.0` | Interface de rede para escutar em deploys como Render |
 | `REDIS_HOST` | `localhost` | Host do Redis |
 | `REDIS_PORT` | `6379` | Porta do Redis |
 | `REDIS_PASSWORD` | vazio | Senha do Redis, se existir |
+| `REDIS_TLS` | `false` | Use `true` para Redis hospedado com TLS, como Upstash |
 | `META_API_SIMULATION_URL` | `https://jsonplaceholder.typicode.com/posts/1` | Endpoint HTTP externo usado pelo worker |
 | `META_API_TIMEOUT_MS` | `3000` | Timeout da chamada externa |
 | `TAKEDOWN_JOB_ATTEMPTS` | `3` | Maximo de tentativas do job |

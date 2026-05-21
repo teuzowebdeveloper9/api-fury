@@ -3,12 +3,18 @@ import type { ConnectionOptions } from "bullmq";
 import { z } from "zod";
 
 const positiveInteger = z.coerce.number().int().positive();
+const booleanFromEnv = z
+  .enum(["true", "false"])
+  .default("false")
+  .transform((value) => value === "true");
 
 const envSchema = z.object({
   PORT: positiveInteger.default(3000),
+  HOST: z.string().min(1).default("0.0.0.0"),
   REDIS_HOST: z.string().min(1).default("localhost"),
   REDIS_PORT: positiveInteger.default(6379),
   REDIS_PASSWORD: z.string().optional(),
+  REDIS_TLS: booleanFromEnv,
   META_API_SIMULATION_URL: z
     .string()
     .url()
@@ -41,6 +47,10 @@ export class AppConfigService {
     return this.env.PORT;
   }
 
+  get host(): string {
+    return this.env.HOST;
+  }
+
   get redisConnection(): ConnectionOptions {
     const connection: ConnectionOptions = {
       host: this.env.REDIS_HOST,
@@ -50,6 +60,10 @@ export class AppConfigService {
 
     if (this.env.REDIS_PASSWORD && this.env.REDIS_PASSWORD.length > 0) {
       connection.password = this.env.REDIS_PASSWORD;
+    }
+
+    if (this.env.REDIS_TLS) {
+      connection.tls = {};
     }
 
     return connection;
