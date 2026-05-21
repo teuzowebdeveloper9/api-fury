@@ -2,6 +2,7 @@ import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 
 import { EnvironmentModule } from "../config/environment.module";
+import { HealthController } from "../interfaces/http/health.controller";
 import {
   META_ADS_GATEWAY,
   type MetaAdsGateway
@@ -26,7 +27,7 @@ import { TAKEDOWN_QUEUE } from "./takedown.constants";
       name: TAKEDOWN_QUEUE
     })
   ],
-  controllers: [TakedownController],
+  controllers: [HealthController, TakedownController],
   providers: [
     BullMqTakedownQueueAdapter,
     JsonPlaceholderMetaAdsGateway,

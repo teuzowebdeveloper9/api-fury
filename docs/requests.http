@@ -1,0 +1,53 @@
+@baseUrl = https://api-fury.onrender.com
+@jobId = takedown-replace-with-returned-job-id
+
+### Root
+GET {{baseUrl}}/
+
+### Health check
+GET {{baseUrl}}/health
+
+### Scalar docs
+GET {{baseUrl}}/docs
+
+### OpenAPI contract
+GET {{baseUrl}}/openapi.json
+
+### Create takedown job
+POST {{baseUrl}}/webhook/violation
+Content-Type: application/json
+
+{
+  "adId": "ad_review_001",
+  "tenantId": "tenant_review",
+  "violationType": "BRAND_VIOLATION",
+  "severity": "HIGH",
+  "detectedAt": "2026-05-21T14:00:00.000Z"
+}
+
+### Idempotency check: send the same adId + tenantId again
+POST {{baseUrl}}/webhook/violation
+Content-Type: application/json
+
+{
+  "adId": "ad_review_001",
+  "tenantId": "tenant_review",
+  "violationType": "BRAND_VIOLATION",
+  "severity": "HIGH",
+  "detectedAt": "2026-05-21T14:00:00.000Z"
+}
+
+### Get job status
+GET {{baseUrl}}/jobs/{{jobId}}
+
+### Invalid payload: Zod returns detailed 400 errors
+POST {{baseUrl}}/webhook/violation
+Content-Type: application/json
+
+{
+  "adId": "",
+  "tenantId": "tenant_review",
+  "violationType": "INVALID",
+  "severity": "HIGH",
+  "detectedAt": "not-a-date"
+}

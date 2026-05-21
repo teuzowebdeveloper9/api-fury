@@ -1,5 +1,11 @@
 # FURY Click Hero API
 
+[![CI](https://github.com/teuzowebdeveloper9/api-fury/actions/workflows/ci.yml/badge.svg)](https://github.com/teuzowebdeveloper9/api-fury/actions/workflows/ci.yml)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6)
+[![Deploy](https://img.shields.io/badge/deploy-Render-46E3B7)](https://api-fury.onrender.com)
+[![Docs](https://img.shields.io/badge/docs-Scalar-0F172A)](https://api-fury.onrender.com/docs)
+
 Mini-API em Node.js + TypeScript para o desafio tecnico FURY. A API recebe um webhook de violacao de anuncio, valida o payload com Zod, enfileira um job de takedown com BullMQ/Redis e executa um worker que chama a API publica JSONPlaceholder como simulacao da Meta Ads API.
 
 ## Deploy publicado
@@ -30,7 +36,19 @@ OpenAPI JSON:
 https://api-fury.onrender.com/openapi.json
 ```
 
+Documentos auxiliares para revisao:
+
+- [Arquitetura](docs/ARCHITECTURE.md)
+- [Trade-offs de deploy e producao](docs/TRADEOFFS.md)
+- [Requests HTTP para teste rapido](docs/requests.http)
+
 ### Como testar o deploy
+
+Health check operacional:
+
+```bash
+curl https://api-fury.onrender.com/health
+```
 
 Crie um job:
 
@@ -104,8 +122,10 @@ O uso dessas ferramentas nao substituiu as decisoes tecnicas: a arquitetura, as 
 - Worker tratando sucesso `2xx`, falha HTTP `4xx/5xx` e timeout/erro de rede.
 - Redis local via Docker para desenvolvimento e Upstash Redis com TLS para deploy.
 - Testes unitarios cobrindo regra de idempotencia, validacao do webhook e cenarios de sucesso/falha/timeout da chamada externa.
+- Testes e2e cobrindo `POST /webhook/violation`, payload invalido, idempotencia e `GET /jobs/:id`.
 - CI no GitHub Actions rodando typecheck, lint, testes e build a cada push/PR na `main`.
 - Documentacao Scalar com contrato OpenAPI para facilitar avaliacao, teste manual e entendimento dos payloads.
+- `docs/ARCHITECTURE.md`, `docs/TRADEOFFS.md` e `docs/requests.http` para deixar claro o raciocinio tecnico e acelerar a validacao.
 - Cuidados de seguranca: `.env` fora do Git, `.env.example` documentado, `helmet`, logs sem payload completo e sem chaves sensiveis versionadas.
 
 ## Stack
@@ -169,7 +189,8 @@ Referencias oficiais consultadas:
 ## Requisitos atendidos
 
 - `POST /webhook/violation` recebe o webhook.
-- `GET /` e `GET /health` retornam status operacional simples.
+- `GET /` retorna status e endpoints disponiveis.
+- `GET /health` valida processo da API, Redis `PING` e configuracao da URL externa.
 - `GET /docs` exibe a documentacao interativa Scalar.
 - `GET /openapi.json` expoe a especificacao OpenAPI.
 - Payload validado com Zod e erro `400` detalhado em caso invalido.
@@ -296,10 +317,11 @@ Resposta:
 
 ## Testes com Jest
 
-Os testes focam em comportamento de aplicacao e validacao de entrada:
+Os testes focam em comportamento de aplicacao, validacao de entrada e fluxo HTTP:
 
 - `ReportViolationUseCase` garante `jobId` deterministico e nao revelador.
 - `violationWebhookSchema` garante rejeicao de payload invalido com issues por campo.
+- `test/e2e/takedown.e2e.spec.ts` cobre webhook valido, payload invalido, duplicidade `adId + tenantId` e consulta de status.
 
 Infraestrutura externa e mockada por portas quando necessario. Testes unitarios nao fazem chamadas HTTP reais.
 
