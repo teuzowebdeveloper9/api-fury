@@ -4,7 +4,6 @@ import { ConfigModule as NestConfigModule } from "@nestjs/config";
 
 import { AppConfigService } from "./config/app-config.service";
 import { EnvironmentModule } from "./config/environment.module";
-import { HealthController } from "./interfaces/http/health.controller";
 import { TakedownModule } from "./takedown/takedown.module";
 
 @Module({
@@ -22,7 +21,6 @@ import { TakedownModule } from "./takedown/takedown.module";
       })
     }),
     TakedownModule
-  ],
-  controllers: [HealthController]
+  ]
 })
 export class AppModule {}
