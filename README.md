@@ -24,6 +24,8 @@ Nao e necessario rodar o projeto localmente para validar o fluxo principal do de
 - Upstash Redis como Redis gerenciado para armazenar a fila e o estado dos jobs.
 - JSONPlaceholder como endpoint externo de simulacao da Meta API.
 
+O deploy no Render foi feito com apoio do MCP do Render no Claude Code, mantendo a escolha da arquitetura e das variaveis de ambiente sob responsabilidade do autor.
+
 Documentacao interativa da API:
 
 ```text
