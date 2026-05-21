@@ -6,7 +6,7 @@
 [![Deploy](https://img.shields.io/badge/deploy-Render-46E3B7)](https://api-fury.onrender.com)
 [![Docs](https://img.shields.io/badge/docs-Scalar-0F172A)](https://api-fury.onrender.com/docs)
 
-Mini-API em Node.js + TypeScript para o desafio tecnico FURY. A API recebe um webhook de violacao de anuncio, valida o payload com Zod, enfileira um job de takedown com BullMQ/Redis e executa um worker que chama a API publica JSONPlaceholder como simulacao da Meta Ads API.
+Esse projeto implementa todos os requisitos do desafio tecnico FURY. A API em Node.js + TypeScript recebe um webhook de violacao de anuncio, valida o payload com Zod, enfileira um job de takedown com BullMQ/Redis e executa um worker que chama a API publica JSONPlaceholder como simulacao da Meta Ads API.
 
 ## Deploy publicado
 
