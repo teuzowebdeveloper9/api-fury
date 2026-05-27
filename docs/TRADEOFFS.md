@@ -45,11 +45,17 @@ For production, the important requirement is not the provider itself, but having
 - backups/retention according to business needs;
 - clear monitoring around latency, memory and connection errors.
 
+## Dead-letter Queue
+
+Jobs that fail after all retry attempts are recorded in a dedicated `takedown-dead-letter` BullMQ queue. The record keeps the original job id, source queue, attempt count, error message, failure timestamp and original payload so an operator could inspect or replay the job later.
+
+For the challenge, this is intentionally internal queue behavior rather than a new public endpoint. In production, the next step would be an authenticated admin workflow to list, inspect, retry or permanently discard dead-letter jobs.
+
 ## Missing Production Hardening
 
 These items are intentionally outside the challenge scope, but would be next steps:
 
-- dead-letter queue for jobs that fail after all retries;
+- authenticated admin workflow for dead-letter inspection and replay;
 - structured metrics for queue waiting time, processing time and failure rate;
 - API authentication for webhooks;
 - request signing or shared secret validation;

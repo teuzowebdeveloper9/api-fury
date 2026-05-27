@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { OnWorkerEvent, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
 
@@ -7,13 +7,17 @@ import type {
   TakedownJobResult
 } from "../../application/ports/takedown-queue.port";
 import { ProcessTakedownUseCase } from "../../application/use-cases/process-takedown.use-case";
+import { RecordDeadLetterUseCase } from "../../application/use-cases/record-dead-letter.use-case";
 import { TAKEDOWN_JOB_NAME, TAKEDOWN_QUEUE } from "../../takedown.constants";
 
 @Processor(TAKEDOWN_QUEUE)
 export class TakedownProcessor extends WorkerHost {
   private readonly logger = new Logger(TakedownProcessor.name);
 
-  constructor(private readonly processTakedownUseCase: ProcessTakedownUseCase) {
+  constructor(
+    private readonly processTakedownUseCase: ProcessTakedownUseCase,
+    private readonly recordDeadLetterUseCase: RecordDeadLetterUseCase
+  ) {
     super();
   }
 
@@ -41,6 +45,46 @@ export class TakedownProcessor extends WorkerHost {
       throw error;
     }
   }
+
+  @OnWorkerEvent("failed")
+  async recordDeadLetterOnFinalFailure(
+    job: Job<TakedownJobData, TakedownJobResult, string> | undefined,
+    error: Error
+  ): Promise<void> {
+    if (!job) {
+      this.logger.warn("A takedown job failed without job metadata");
+      return;
+    }
+
+    if (job.name !== TAKEDOWN_JOB_NAME) {
+      return;
+    }
+
+    const maxAttempts = getConfiguredAttempts(job);
+    const originalJobId = job.id ?? job.data.jobId;
+    const errorMessage = getErrorMessage(error);
+
+    if (job.attemptsMade < maxAttempts) {
+      this.logger.warn(
+        `Takedown job ${originalJobId} failed attempt ${job.attemptsMade}/${maxAttempts}: ${errorMessage}`
+      );
+      return;
+    }
+
+    await this.recordDeadLetterUseCase.execute({
+      originalJobId,
+      sourceQueue: TAKEDOWN_QUEUE,
+      failedAt: new Date().toISOString(),
+      attemptsMade: job.attemptsMade,
+      maxAttempts,
+      error: errorMessage,
+      payload: job.data
+    });
+
+    this.logger.error(
+      `Takedown job ${originalJobId} exhausted ${job.attemptsMade}/${maxAttempts} attempts and was moved to the dead-letter queue: ${errorMessage}`
+    );
+  }
 }
 
 function getErrorMessage(error: unknown): string {
@@ -49,4 +93,16 @@ function getErrorMessage(error: unknown): string {
   }
 
   return "unknown error";
+}
+
+function getConfiguredAttempts(
+  job: Job<TakedownJobData, TakedownJobResult, string>
+): number {
+  const attempts = job.opts.attempts;
+
+  if (typeof attempts === "number" && Number.isFinite(attempts) && attempts > 0) {
+    return attempts;
+  }
+
+  return 1;
 }

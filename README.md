@@ -122,6 +122,7 @@ O uso dessas ferramentas nao substituiu as decisoes tecnicas: a arquitetura, as 
 - Validacao de payload com Zod em pipe proprio, retornando `400` com erros por campo.
 - Idempotencia com `jobId` deterministico baseado em SHA-256 de `tenantId + adId`, evitando expor esses valores diretamente.
 - BullMQ configurado com retry automatico e backoff exponencial.
+- Dead-letter queue para preservar jobs que falham depois de todas as tentativas.
 - Worker tratando sucesso `2xx`, falha HTTP `4xx/5xx` e timeout/erro de rede.
 - Redis local via Docker para desenvolvimento e Upstash Redis com TLS para deploy.
 - Testes unitarios cobrindo regra de idempotencia, validacao do webhook e cenarios de sucesso/falha/timeout da chamada externa.
@@ -201,6 +202,7 @@ Referencias oficiais consultadas:
 - Redis roda localmente via Docker Compose.
 - Worker chama `https://jsonplaceholder.typicode.com/posts/1`.
 - Retry automatico com backoff exponencial, maximo de 3 tentativas por padrao.
+- Jobs que esgotam todas as tentativas sao registrados na fila `takedown-dead-letter`.
 - Idempotencia por `adId + tenantId` usando `jobId` deterministico com SHA-256.
 - `GET /jobs/:id` retorna `{ jobId, status, attempts, result, error }`.
 

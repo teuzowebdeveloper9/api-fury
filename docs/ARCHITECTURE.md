@@ -10,7 +10,8 @@ This project is a small NestJS API built around one feature: receiving ad violat
 4. `BullMqTakedownQueueAdapter` enqueues the job in BullMQ/Redis.
 5. `TakedownProcessor` consumes the queue and runs `ProcessTakedownUseCase`.
 6. `JsonPlaceholderMetaAdsGateway` calls `https://jsonplaceholder.typicode.com/posts/1` as the Meta API simulation.
-7. `GET /jobs/:id` reads the current BullMQ job state and returns a stable response shape.
+7. If the job exhausts all retry attempts, `TakedownProcessor` records it in the `takedown-dead-letter` queue.
+8. `GET /jobs/:id` reads the current BullMQ job state and returns a stable response shape.
 
 ## Layers
 
@@ -45,6 +46,8 @@ The worker treats these scenarios explicitly:
 - Timeout/network error: controlled failure, allowing BullMQ retry.
 
 Retries are configured with exponential backoff and a maximum of 3 attempts by default.
+
+After the final failed attempt, the worker records a dead-letter job in `takedown-dead-letter` with the original job id, source queue, attempt count, error message, failure timestamp and original job payload. This keeps failed jobs inspectable or replayable later without changing the public HTTP contract.
 
 ## Operational Endpoints
 
